@@ -6,19 +6,19 @@
     
     <meta http-equiv="Content-Security-Policy" 
           content="default-src 'self'; 
-                   script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com; 
+                   script-src 'self' 'unsafe-inline' https://player.vimeo.com https://va.vercel-scripts.com; 
                    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; 
                    font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; 
                    img-src 'self' https: data:; 
-                   frame-src 'self' https://hooks.stripe.com https://www.youtube.com; 
-                   connect-src 'self' https://maps.googleapis.com https://webinar-chatdb-ulal.vercel.app https://vitals.vercel-insights.com;">
+                   frame-src 'self' https://player.vimeo.com; 
+                   connect-src 'self' https://api.stripe.com https://maps.googleapis.com https://m.stripe.network https://webinar-chatdb-ulal.vercel.app https://vitals.vercel-insights.com;">
 
     <title>Webinar: Oportunidad de Franquicia</title>
     
     <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
     <script defer src="/_vercel/insights/script.js"></script>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
@@ -26,48 +26,23 @@
         body, html { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: white; height: 100%; overflow-x: hidden; }
         .main-container { display: flex; flex-direction: column; min-height: 100vh; }
 
-        /* --- LAYOUT GENERAL --- */
-        #live-webinar {
-            width: 100%; max-width: 1600px; margin: 0 auto; flex-grow: 1; padding: 20px; box-sizing: border-box;
-            display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 20px;
-            position: relative; 
-        }
-        
+        #live-webinar { width: 100%; max-width: 1600px; margin: 0 auto; flex-grow: 1; padding: 20px; box-sizing: border-box; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 20px; position: relative; }
         .col-video { flex: 1; min-width: 0; display: flex; flex-direction: column; z-index: 10; transition: all 0.3s ease; }
         
-        .video-wrapper { 
-            position: relative; width: 100%; border-radius: 12px; overflow: hidden; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: #000; 
-        }
-
-        .video-container { 
-            position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
-        }
-        
-        .video-container iframe, .video-container #yt-player { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; 
-            pointer-events: none; 
-        }
+        .video-wrapper { position: relative; width: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: #000; }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; transition: all 0.5s ease; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
         
         /* Controles */
-        .custom-controls { 
-            display: flex; justify-content: space-between; align-items: center; 
-            background-color: #1e293b; padding: 12px 20px; border-top: 1px solid #334155; 
-            position: relative; z-index: 20;
-        }
+        .custom-controls { display: flex; justify-content: space-between; align-items: center; background-color: #1e293b; padding: 12px 20px; border-top: 1px solid #334155; position: relative; z-index: 20; }
         .btn-control { background: none; border: none; color: white; font-size: 1.1em; cursor: pointer; margin-right: 15px; }
         .live-indicator { display: flex; align-items: center; font-weight: bold; font-size: 0.85em; padding: 5px 10px; border-radius: 4px; }
         .live-indicator.is-live { color: #ef4444; cursor: default; }
         .live-indicator.not-live { color: #94a3b8; background: rgba(255,255,255,0.1); cursor: pointer; }
         .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; background-color: currentColor; }
 
-        /* --- CHAT --- */
-        .col-chat {
-            width: 400px; flex-shrink: 0; height: 650px; display: flex; flex-direction: column;
-            background-color: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-            z-index: 15;
-        }
+        /* Chat */
+        .col-chat { width: 400px; flex-shrink: 0; height: 650px; display: flex; flex-direction: column; background-color: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; transition: transform 0.3s ease, opacity 0.3s ease; z-index: 15; }
         .chat-header { padding: 15px; background-color: #334155; border-bottom: 1px solid #475569; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #1e293b; }
         .chat-msg { font-size: 0.9em; line-height: 1.4; animation: fadeIn 0.3s ease; }
@@ -88,18 +63,15 @@
         #close-offer-immersive { display: none; }
 
         /* ==========================================================================
-           MODO INMERSIVO (FULLSCREEN)
+           MODO INMERSIVO (FULLSCREEN / MOBILE)
            ========================================================================== */
+        
         body.is-immersive { overflow: hidden; }
-        body.is-immersive #live-webinar {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            margin: 0; padding: 0; max-width: none; background: #000;
-            z-index: 9999; flex-direction: column;
-        }
+        body.is-immersive #live-webinar { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; margin: 0; padding: 0; max-width: none; background: #000; z-index: 9999; flex-direction: column; }
         body.is-immersive .col-video { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
         body.is-immersive .video-wrapper { width: 100%; height: 100%; border-radius: 0; display: flex; flex-direction: column; }
 
-        /* CROP DEL VIDEO YOUTUBE */
+        /* CROP DEL VIDEO (Vimeo) */
         body.is-immersive .video-container {
             padding-bottom: 0; height: 100vh; width: 177.78vh; position: absolute;
             left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -147,7 +119,6 @@
         body.is-immersive #close-offer-immersive { display: block; }
         body.is-immersive #offer-in-webinar.dismissed-fullscreen { display: none !important; }
 
-        /* Media Queries */
         @media (max-width: 960px) {
             body:not(.is-immersive) #live-webinar { flex-direction: column; padding: 10px; }
             body:not(.is-immersive) .col-video { width: 100%; flex: none; }
@@ -157,7 +128,7 @@
 
         .hidden { display: none !important; }
         
-        /* --- ESTILOS DE CONTACTO (Sin Stripe) --- */
+        /* ESTILOS DE CONTACTO */
         .state-section {
             background-image: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)), url('https://ulalmexico.com/wp-content/uploads/2025/10/WhatsApp-Image-2025-08-16-at-12.20.07-PM-2.jpeg');
             background-size: cover; background-position: center; flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;
@@ -165,13 +136,13 @@
         .countdown-box { background: rgba(255, 255, 255, 0.05); padding: 20px 40px; border-radius: 15px; margin: 20px auto; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
         .timer-display { font-size: 2.5em; font-weight: 800; color: #fbbf24; margin-top: 10px; }
         
-        /* Botones de Acción */
+        /* Botones */
         .btn-action { display: inline-flex; align-items: center; justify-content: center; padding: 15px 30px; border-radius: 50px; text-decoration: none; font-weight: bold; margin-top: 20px; font-size: 1.1em; cursor: pointer; transition: transform 0.2s; border: none; width: 100%; box-sizing: border-box; }
         .btn-action:hover { transform: scale(1.05); }
         .btn-whatsapp { background-color: #22c55e; color: white; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); }
         .btn-info-custom { background-color: #3b82f6; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
         
-        /* Tarjeta de Oferta */
+        /* Tarjeta de Contacto */
         #offer-in-webinar { background-color: #fff; color: #333; padding: 30px; border-radius: 15px; margin-top: 20px; animation: slideUp 0.8s ease-out; border: 3px solid #22c55e; text-align: center; }
         
         .offer-24h-container { max-width: 600px; padding: 40px; background: #fff; color: #333; border-radius: 20px; text-align: center; }
@@ -199,7 +170,10 @@
                 <div class="col-video">
                     <div class="video-wrapper">
                         <div class="video-container">
-                            <div id="yt-player"></div>
+                            <iframe id="vimeo-player"
+                                src="https://player.vimeo.com/video/1162681163?title=0&byline=0&portrait=0&controls=0&playsinline=1" 
+                                allow="autoplay; fullscreen" allowfullscreen>
+                            </iframe>
                         </div>
                         
                         <div class="custom-controls">
@@ -208,7 +182,6 @@
                                 <button id="btn-volume" class="btn-control"><i class="fas fa-volume-mute"></i></button>
                                 <button id="btn-toggle-chat-float" class="btn-control"><i class="fas fa-comment-dots"></i></button>
                             </div>
-                            
                             <div style="display: flex; align-items: center;">
                                 <div id="btn-go-live" class="live-indicator is-live" style="margin-right: 15px;">
                                     <span class="dot"></span> EN VIVO
@@ -282,31 +255,17 @@
         webinarHour: 19, // 7 PM
         webinarMinute: 0,
         
-        videoDurationMin: 40, 
-        offerTimeMin: 25, // Minuto donde aparece el botón de contacto
+        videoDurationMin: 49, 
+        offerTimeMin: 48, // Minuto de aparición
         offerTimeSec: 0,
         
         expiredDurationHours: 48,
-        // No price required
     };
-    
-    // VIDEO ID (YOUTUBE) - CAMBIAR POR EL DE FRANQUICIAS
-    const VIDEO_ID = "2d3cO1utu5s"; 
     
     // API URL & LINKS
     const API_URL = "https://webinar-chatdb-ulal.vercel.app"; 
-    const WHATSAPP_LINK = "https://chat.whatsapp.com/G9NJnrhjZIhA1sMtVEOV0a"; // Link para agendar
+    const WHATSAPP_LINK = "https://wa.link/q6gq1j"; 
 
-    /* ================= BOTS DE FRANQUICIAS ================= */
-    const fakeChatSchedule = [
-        { time: 60, name: "Moderador", text: "Bienvenidos inversionistas. Hoy hablaremos del modelo de negocio.", admin: true },
-        { time: 300, name: "Carlos M.", text: "¿Cuál es la inversión inicial requerida?" },
-        { time: 600, name: "Ana P.", text: "¿Se requiere experiencia previa en educación?" },
-        { time: 900, name: "Moderador", text: "Al final de la sesión abriremos agenda para entrevistas personales.", admin: true },
-        { time: 1200, name: "Roberto", text: "¿Tienen exclusividad de territorio?" },
-        { time: 1500, name: "Sofia L.", text: "¿Cuál es el tiempo de retorno de inversión?" }
-    ];
-    
     // Asignar links a botones
     document.getElementById('btn-wa-pre').href = WHATSAPP_LINK;
     document.getElementById('btn-wa-offer').href = WHATSAPP_LINK;
@@ -317,9 +276,11 @@
     const views = { pre: document.getElementById('view-pre'), live: document.getElementById('view-live'), offer: document.getElementById('view-offer'), expired: document.getElementById('view-expired') };
     const timers = { pre: document.getElementById('timer-pre'), offer: document.getElementById('timer-offer') };
     
-    var player; 
-    var isPlayerReady = false;
+    // VIMEO PLAYER
+    const iframe = document.getElementById('vimeo-player');
+    const player = new Vimeo.Player(iframe);
     
+    // Controles
     const btnPlayPause = document.getElementById('btn-play-pause');
     const btnGoLive = document.getElementById('btn-go-live');
     const btnVolume = document.getElementById('btn-volume');
@@ -333,39 +294,13 @@
     let currentPhase = ""; 
     let isImmersive = false;
     
-    // FIXES AUDIO
+    // FIXES AUDIO (VIMEO MOBILE)
     let ignoreSync = false; 
     let isMuted = true; 
 
-    let fakeMessagesSent = new Set();
     let seenMessageIds = new Set();
     let chatInterval = null; 
     let webinarStartTimeISO = null;
-
-    /* ================= YOUTUBE API ================= */
-    window.onYouTubeIframeAPIReady = function() {
-        player = new YT.Player('yt-player', {
-            videoId: VIDEO_ID,
-            playerVars: {
-                'autoplay': 1,
-                'controls': 0, 
-                'disablekb': 1,
-                'fs': 0,
-                'modestbranding': 1,
-                'playsinline': 1, 
-                'rel': 0,
-                'mute': 1, 
-                'origin': window.location.origin
-            },
-            events: { 'onReady': onPlayerReady }
-        });
-    };
-
-    function onPlayerReady(event) {
-        isPlayerReady = true;
-        event.target.mute(); 
-        if(currentPhase === 'live') event.target.playVideo();
-    }
 
     /* ================= UI LOGIC ================= */
     window.dismissOfferFullscreen = function() { offerInWebinar.classList.add('dismissed-fullscreen'); };
@@ -426,8 +361,8 @@
     function switchView(viewName) {
         Object.values(views).forEach(el => el.classList.add('hidden'));
         if(views[viewName]) views[viewName].classList.remove('hidden');
-        if (viewName !== 'live') { if(isPlayerReady) player.pauseVideo(); }
-        else { if(isPlayerReady) player.playVideo(); }
+        if (viewName !== 'live') player.getPaused().then(paused => { if(!paused) player.pause(); });
+        else { player.setVolume(0); player.play().catch(e => console.log("Autoplay blocked")); }
         fetch(`${API_URL}/track-visitor`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: viewName, userAgent: navigator.userAgent }) }).catch(e=>{});
     }
 
@@ -455,24 +390,16 @@
             if (currentPhase === 'live') { isUserSynced = true; startChatPolling(cycle.start.toISOString()); } else stopChatPolling();
         }
 
-        if (currentPhase === 'live' && isPlayerReady) {
+        if (currentPhase === 'live') {
             if (isUserSynced && !ignoreSync) {
-                let state = player.getPlayerState();
-                if (state === 1 || state === 3) { 
-                    let curr = player.getCurrentTime();
-                    if (Math.abs(curr - theoreticalTime) > 15) player.seekTo(theoreticalTime, true);
-                }
+                player.getCurrentTime().then(seconds => { 
+                    if (Math.abs(seconds - theoreticalTime) > 15) { 
+                        player.setCurrentTime(theoreticalTime).catch(()=>{}); 
+                    }
+                });
                 updateLiveButton(true);
             } else updateLiveButton(false);
             
-            const currentSec = Math.floor(theoreticalTime);
-            fakeChatSchedule.forEach(fakeMsg => {
-                if (currentSec >= fakeMsg.time && !fakeMessagesSent.has(fakeMsg.time)) {
-                    if (currentSec - fakeMsg.time < 5) appendMessage(fakeMsg.name, fakeMsg.text, false, fakeMsg.admin);
-                    fakeMessagesSent.add(fakeMsg.time);
-                }
-            });
-
             // OFERTA (CONTACTO)
             const offerTrigger = (CONFIG.offerTimeMin * 60) + CONFIG.offerTimeSec;
             if (theoreticalTime > offerTrigger) {
@@ -489,31 +416,29 @@
         else { btnGoLive.className = "live-indicator not-live"; btnGoLive.innerHTML = '<span class="dot"></span> VOLVER AL VIVO'; }
     }
     
-    btnPlayPause.addEventListener('click', () => { 
-        if(!isPlayerReady) return;
-        if(player.getPlayerState() === 1) { player.pauseVideo(); btnPlayPause.innerHTML='<i class="fas fa-play"></i>'; isUserSynced = false; }
-        else { player.playVideo(); btnPlayPause.innerHTML='<i class="fas fa-pause"></i>'; }
-    });
+    btnPlayPause.addEventListener('click', () => { player.getPaused().then(paused => { if (paused) { player.play(); btnPlayPause.innerHTML='<i class="fas fa-pause"></i>'; } else { player.pause(); btnPlayPause.innerHTML='<i class="fas fa-play"></i>'; isUserSynced = false; } }); });
     
     btnVolume.addEventListener('click', () => {
-        if(!isPlayerReady) return;
         ignoreSync = true;
         setTimeout(() => { ignoreSync = false; }, 10000); 
-        player.setVolume(100).catch(()=>{});
+        player.setVolume(1).catch(()=>{});
+        
         if (isMuted) {
-            player.unMute().then(() => { player.getPlayerState() === 2 && player.playVideo(); }).catch(()=>{});
+            player.setMuted(false).then(() => {
+                player.getPaused().then(paused => { if(paused) player.play(); });
+            }).catch(()=>{});
             btnVolume.innerHTML='<i class="fas fa-volume-up"></i>';
             isMuted = false;
         } else {
-            player.mute().catch(()=>{});
+            player.setMuted(true).catch(()=>{});
             btnVolume.innerHTML='<i class="fas fa-volume-mute"></i>';
             isMuted = true;
         }
     });
 
     btnGoLive.addEventListener('click', () => { 
-        if (!isUserSynced && isPlayerReady) { 
-            player.seekTo(theoreticalTime, true); player.playVideo(); isUserSynced = true; btnPlayPause.innerHTML='<i class="fas fa-pause"></i>'; 
+        if (!isUserSynced) { 
+            player.setCurrentTime(theoreticalTime); player.play(); isUserSynced = true; btnPlayPause.innerHTML='<i class="fas fa-pause"></i>'; 
         } 
     });
 
@@ -531,8 +456,8 @@
     }
     
     function startChatPolling(startTimeISO) {
-        webinarStartTimeISO = startTimeISO; chatMessagesDiv.innerHTML = ''; fakeMessagesSent.clear(); seenMessageIds.clear();
-        appendMessage('Moderador', '¡Inicia sesión de preguntas! 👇', false, true);
+        webinarStartTimeISO = startTimeISO; chatMessagesDiv.innerHTML = ''; seenMessageIds.clear();
+        appendMessage('Moderador', '¡Bienvenidos inversionistas! 👇', false, true);
         fetchMessages(); 
         if (chatInterval) clearInterval(chatInterval); 
         chatInterval = setInterval(fetchMessages, 2500);
@@ -542,7 +467,7 @@
     async function fetchMessages() {
         if (!webinarStartTimeISO) return;
         try {
-            // endpoint ESPECIFICO
+            // ENDPOINT ESPECÍFICO
             const response = await fetch(`${API_URL}/chat-fran?since=${webinarStartTimeISO}`);
             const messages = await response.json();
             messages.forEach(msg => {
@@ -559,7 +484,7 @@
         const name = nameInput.value.trim() || "Anónimo";
         msgInput.value = "";
         try { 
-            // endpoint ESPECIFICO
+            // ENDPOINT ESPECÍFICO
             await fetch(`${API_URL}/chat-fran`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, text }) }); 
             fetchMessages(); 
         } catch (e) {}
