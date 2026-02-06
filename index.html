@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com; 
+                   style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; 
+                   font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; 
+                   img-src 'self' https: data:; 
+                   frame-src 'self' https://hooks.stripe.com https://www.youtube.com; 
+                   connect-src 'self' https://maps.googleapis.com https://webinar-chatdb-ulal.vercel.app https://vitals.vercel-insights.com;">
+
+    <title>Webinar: Oportunidad de Franquicia</title>
+    
+    <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+    <script defer src="/_vercel/insights/script.js"></script>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* --- ESTILOS BASE --- */
+        body, html { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: white; height: 100%; overflow-x: hidden; }
+        .main-container { display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* --- LAYOUT GENERAL --- */
+        #live-webinar {
+            width: 100%; max-width: 1600px; margin: 0 auto; flex-grow: 1; padding: 20px; box-sizing: border-box;
+            display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 20px;
+            position: relative; 
+        }
+        
+        .col-video { flex: 1; min-width: 0; display: flex; flex-direction: column; z-index: 10; transition: all 0.3s ease; }
+        
+        .video-wrapper { 
+            position: relative; width: 100%; border-radius: 12px; overflow: hidden; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: #000; 
+        }
+
+        .video-container { 
+            position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+        }
+        
+        .video-container iframe, .video-container #yt-player { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; 
+            pointer-events: none; 
+        }
+        
+        /* Controles */
+        .custom-controls { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background-color: #1e293b; padding: 12px 20px; border-top: 1px solid #334155; 
+            position: relative; z-index: 20;
+        }
+        .btn-control { background: none; border: none; color: white; font-size: 1.1em; cursor: pointer; margin-right: 15px; }
+        .live-indicator { display: flex; align-items: center; font-weight: bold; font-size: 0.85em; padding: 5px 10px; border-radius: 4px; }
+        .live-indicator.is-live { color: #ef4444; cursor: default; }
+        .live-indicator.not-live { color: #94a3b8; background: rgba(255,255,255,0.1); cursor: pointer; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; background-color: currentColor; }
+
+        /* --- CHAT --- */
+        .col-chat {
+            width: 400px; flex-shrink: 0; height: 650px; display: flex; flex-direction: column;
+            background-color: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            z-index: 15;
+        }
+        .chat-header { padding: 15px; background-color: #334155; border-bottom: 1px solid #475569; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #1e293b; }
+        .chat-msg { font-size: 0.9em; line-height: 1.4; animation: fadeIn 0.3s ease; }
+        .chat-name { font-weight: bold; color: #94a3b8; margin-right: 5px; font-size: 0.85em; }
+        .chat-text { color: #e2e8f0; word-wrap: break-word; }
+        .chat-msg.me .chat-name { color: #22c55e; }
+        .chat-msg.me { background: rgba(34, 197, 94, 0.1); padding: 5px; border-radius: 5px; }
+        .chat-msg.admin .chat-name { color: #fbbf24; }
+        .chat-input-area { padding: 15px; background-color: #334155; border-top: 1px solid #475569; }
+        .chat-input-row { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+        .chat-input { background: #0f172a; border: 1px solid #475569; color: white; padding: 8px 12px; border-radius: 20px; outline: none; font-size: 0.9em; width: 100%; box-sizing: border-box; }
+        .input-name { width: 40%; } .input-msg { flex-grow: 1; }
+        .btn-send { background: transparent; border: none; color: #22c55e; font-size: 1.2em; cursor: pointer; padding: 0 10px; }
+
+        /* --- BOTONES ESPECÍFICOS --- */
+        #btn-fullscreen { display: inline-block; } 
+        #btn-toggle-chat-float { display: none; } 
+        #close-offer-immersive { display: none; }
+
+        /* ==========================================================================
+           MODO INMERSIVO (FULLSCREEN)
+           ========================================================================== */
+        body.is-immersive { overflow: hidden; }
+        body.is-immersive #live-webinar {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            margin: 0; padding: 0; max-width: none; background: #000;
+            z-index: 9999; flex-direction: column;
+        }
+        body.is-immersive .col-video { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        body.is-immersive .video-wrapper { width: 100%; height: 100%; border-radius: 0; display: flex; flex-direction: column; }
+
+        /* CROP DEL VIDEO YOUTUBE */
+        body.is-immersive .video-container {
+            padding-bottom: 0; height: 100vh; width: 177.78vh; position: absolute;
+            left: 50%; top: 50%; transform: translate(-50%, -50%);
+        }
+
+        /* CONTROLES FLOTANTES */
+        body.is-immersive .custom-controls {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+            border: none; padding: 15px 20px 35px 20px; z-index: 2147483647; 
+        }
+
+        /* CHAT FLOTANTE CON SCROLL */
+        body.is-immersive .col-chat {
+            position: absolute; bottom: 100px; left: 10px; width: 85%; max-width: 350px; 
+            height: 35vh; background: transparent; border: none; border-radius: 0;
+            pointer-events: none; z-index: 2147483646;
+        }
+        body.is-immersive .chat-header { display: none; }
+        body.is-immersive .chat-messages {
+            background: transparent;
+            mask-image: linear-gradient(to bottom, transparent, black 15%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%);
+            padding-bottom: 0; overflow-y: auto !important; pointer-events: auto !important; 
+            display: flex; flex-direction: column; justify-content: flex-end; height: 100%; 
+        }
+        body.is-immersive .chat-msg {
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+            border-radius: 12px; padding: 6px 10px; margin-bottom: 8px;
+            width: fit-content; color: white; text-shadow: 1px 1px 2px black;
+            pointer-events: auto; 
+        }
+        body.is-immersive .chat-msg.me { background: rgba(34, 197, 94, 0.4); }
+        body.is-immersive .chat-input-area { background: transparent; border: none; padding: 5px 0; pointer-events: auto; }
+        body.is-immersive .chat-input { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4); backdrop-filter: blur(4px); color: white; }
+        body.is-immersive #btn-toggle-chat-float { display: inline-block; }
+        body.is-immersive .col-chat.chat-hidden { transform: translateX(-120%); opacity: 0; }
+        
+        /* Oferta Immersive */
+        body.is-immersive #offer-in-webinar { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 90%; max-width: 400px; margin: 0; z-index: 2147483648; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); 
+        }
+        body.is-immersive #close-offer-immersive { display: block; }
+        body.is-immersive #offer-in-webinar.dismissed-fullscreen { display: none !important; }
+
+        /* Media Queries */
+        @media (max-width: 960px) {
+            body:not(.is-immersive) #live-webinar { flex-direction: column; padding: 10px; }
+            body:not(.is-immersive) .col-video { width: 100%; flex: none; }
+            body:not(.is-immersive) .col-chat { width: 100%; height: 500px; margin-top: 15px; }
+            body:not(.is-immersive) .input-name { width: 100% !important; margin-bottom: 8px; }
+        }
+
+        .hidden { display: none !important; }
+        
+        /* --- ESTILOS DE CONTACTO (Sin Stripe) --- */
+        .state-section {
+            background-image: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)), url('https://ulalmexico.com/wp-content/uploads/2025/10/WhatsApp-Image-2025-08-16-at-12.20.07-PM-2.jpeg');
+            background-size: cover; background-position: center; flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;
+        }
+        .countdown-box { background: rgba(255, 255, 255, 0.05); padding: 20px 40px; border-radius: 15px; margin: 20px auto; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .timer-display { font-size: 2.5em; font-weight: 800; color: #fbbf24; margin-top: 10px; }
+        
+        /* Botones de Acción */
+        .btn-action { display: inline-flex; align-items: center; justify-content: center; padding: 15px 30px; border-radius: 50px; text-decoration: none; font-weight: bold; margin-top: 20px; font-size: 1.1em; cursor: pointer; transition: transform 0.2s; border: none; width: 100%; box-sizing: border-box; }
+        .btn-action:hover { transform: scale(1.05); }
+        .btn-whatsapp { background-color: #22c55e; color: white; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); }
+        .btn-info-custom { background-color: #3b82f6; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+        
+        /* Tarjeta de Oferta */
+        #offer-in-webinar { background-color: #fff; color: #333; padding: 30px; border-radius: 15px; margin-top: 20px; animation: slideUp 0.8s ease-out; border: 3px solid #22c55e; text-align: center; }
+        
+        .offer-24h-container { max-width: 600px; padding: 40px; background: #fff; color: #333; border-radius: 20px; text-align: center; }
+        .expired-container { max-width: 600px; padding: 40px; background: #1e293b; border-radius: 20px; border: 1px solid #334155; }
+        
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+
+<body>
+
+    <div class="main-container">
+        <div id="view-pre" class="state-section">
+            <h1>💼 Oportunidad de Negocio: Franquicias</h1>
+            <div class="countdown-box">
+                <p>LA PRESENTACIÓN COMIENZA EN:</p>
+                <div id="timer-pre" class="timer-display">00d 00h 00m 00s</div>
+            </div>
+            <a href="#" class="btn-action btn-whatsapp" id="btn-wa-pre"><i class="fab fa-whatsapp" style="margin-right:10px;"></i> Contactar Asesor</a>
+        </div>
+
+        <div id="view-live" class="hidden">
+            <div id="live-webinar">
+                <div class="col-video">
+                    <div class="video-wrapper">
+                        <div class="video-container">
+                            <div id="yt-player"></div>
+                        </div>
+                        
+                        <div class="custom-controls">
+                            <div>
+                                <button id="btn-play-pause" class="btn-control"><i class="fas fa-pause"></i></button>
+                                <button id="btn-volume" class="btn-control"><i class="fas fa-volume-mute"></i></button>
+                                <button id="btn-toggle-chat-float" class="btn-control"><i class="fas fa-comment-dots"></i></button>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center;">
+                                <div id="btn-go-live" class="live-indicator is-live" style="margin-right: 15px;">
+                                    <span class="dot"></span> EN VIVO
+                                </div>
+                                <button id="btn-fullscreen" class="btn-control"><i class="fas fa-expand"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="offer-in-webinar" class="hidden">
+                        <div id="close-offer-immersive" style="text-align: right; margin-bottom: 5px;">
+                            <span onclick="dismissOfferFullscreen()" style="cursor:pointer; font-size:1.5em; color:#333; background: #f0f0f0; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">&times;</span>
+                        </div>
+                        
+                        <h2 style="margin: 0 0 10px 0; color: #166534;">🚀 ¡Abre tu Propia Sede!</h2>
+                        <p style="color:#555; margin-bottom:20px; font-size: 1.1em;">Agenda una llamada estratégica con nuestro director de expansión y asegura tu territorio.</p>
+                        
+                        <a href="#" id="btn-wa-offer" target="_blank" class="btn-action btn-whatsapp">
+                            <i class="fab fa-whatsapp" style="margin-right:10px;"></i> AGENDAR ENTREVISTA
+                        </a>
+                        
+                        <p style="font-size:0.8em; margin-top:15px; color:#666;">
+                            <i class="fas fa-check-circle" style="color:#22c55e;"></i> Cupos limitados por ciudad
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-chat" id="chat-column">
+                    <div class="chat-header">
+                        <span>Chat Inversionistas</span>
+                        <span style="font-size: 0.8em; color: #22c55e;">• En línea</span>
+                    </div>
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="chat-input-area">
+                        <div class="chat-input-row">
+                            <input type="text" id="chat-name" class="chat-input input-name" placeholder="Nombre">
+                            <input type="text" id="chat-msg" class="chat-input input-msg" placeholder="Escribe tu duda..." autocomplete="off">
+                            <button id="btn-send-chat" class="btn-send"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-offer" class="state-section hidden">
+            <div class="offer-24h-container">
+                <h2>🤝 Últimos Lugares Disponibles</h2>
+                <div class="countdown-box" style="background: #f1f5f9; border: 1px solid #cbd5e1;">
+                    <p style="color:#334155; margin:0;">CIERRE DE CONVOCATORIA EN:</p>
+                    <div id="timer-offer" class="timer-display" style="color: #ef4444;">00:00:00</div>
+                </div>
+                <a href="#" id="btn-wa-post" target="_blank" class="btn-action btn-info-custom">
+                    SOLICITAR INFORMACIÓN
+                </a>
+            </div>
+        </div>
+
+        <div id="view-expired" class="state-section hidden">
+            <div class="expired-container">
+                <h2>Convocatoria Cerrada</h2>
+                <p>Lo sentimos, el periodo de aplicación ha finalizado.</p>
+                <a href="#" id="btn-wa-expired" class="btn-action btn-whatsapp">Contactar Soporte</a>
+            </div>
+        </div>
+    </div>
+
+<script>
+    /* ================= CONFIGURACIÓN ================= */
+    const CONFIG = {
+        webinarDay: 5, // Viernes
+        webinarHour: 19, // 7 PM
+        webinarMinute: 0,
+        
+        videoDurationMin: 40, 
+        offerTimeMin: 25, // Minuto donde aparece el botón de contacto
+        offerTimeSec: 0,
+        
+        expiredDurationHours: 48,
+        // No price required
+    };
+    
+    // VIDEO ID (YOUTUBE) - CAMBIAR POR EL DE FRANQUICIAS
+    const VIDEO_ID = "2d3cO1utu5s"; 
+    
+    // API URL & LINKS
+    const API_URL = "https://webinar-chatdb-ulal.vercel.app"; 
+    const WHATSAPP_LINK = "https://chat.whatsapp.com/G9NJnrhjZIhA1sMtVEOV0a"; // Link para agendar
+
+    /* ================= BOTS DE FRANQUICIAS ================= */
+    const fakeChatSchedule = [
+        { time: 60, name: "Moderador", text: "Bienvenidos inversionistas. Hoy hablaremos del modelo de negocio.", admin: true },
+        { time: 300, name: "Carlos M.", text: "¿Cuál es la inversión inicial requerida?" },
+        { time: 600, name: "Ana P.", text: "¿Se requiere experiencia previa en educación?" },
+        { time: 900, name: "Moderador", text: "Al final de la sesión abriremos agenda para entrevistas personales.", admin: true },
+        { time: 1200, name: "Roberto", text: "¿Tienen exclusividad de territorio?" },
+        { time: 1500, name: "Sofia L.", text: "¿Cuál es el tiempo de retorno de inversión?" }
+    ];
+    
+    // Asignar links a botones
+    document.getElementById('btn-wa-pre').href = WHATSAPP_LINK;
+    document.getElementById('btn-wa-offer').href = WHATSAPP_LINK;
+    document.getElementById('btn-wa-post').href = WHATSAPP_LINK;
+    document.getElementById('btn-wa-expired').href = WHATSAPP_LINK;
+
+    /* ================= ESTADO Y VARIABLES ================= */
+    const views = { pre: document.getElementById('view-pre'), live: document.getElementById('view-live'), offer: document.getElementById('view-offer'), expired: document.getElementById('view-expired') };
+    const timers = { pre: document.getElementById('timer-pre'), offer: document.getElementById('timer-offer') };
+    
+    var player; 
+    var isPlayerReady = false;
+    
+    const btnPlayPause = document.getElementById('btn-play-pause');
+    const btnGoLive = document.getElementById('btn-go-live');
+    const btnVolume = document.getElementById('btn-volume');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const btnToggleChatFloat = document.getElementById('btn-toggle-chat-float');
+    const offerInWebinar = document.getElementById('offer-in-webinar');
+    const chatColumn = document.getElementById('chat-column');
+
+    let isUserSynced = true;
+    let theoreticalTime = 0;
+    let currentPhase = ""; 
+    let isImmersive = false;
+    
+    // FIXES AUDIO
+    let ignoreSync = false; 
+    let isMuted = true; 
+
+    let fakeMessagesSent = new Set();
+    let seenMessageIds = new Set();
+    let chatInterval = null; 
+    let webinarStartTimeISO = null;
+
+    /* ================= YOUTUBE API ================= */
+    window.onYouTubeIframeAPIReady = function() {
+        player = new YT.Player('yt-player', {
+            videoId: VIDEO_ID,
+            playerVars: {
+                'autoplay': 1,
+                'controls': 0, 
+                'disablekb': 1,
+                'fs': 0,
+                'modestbranding': 1,
+                'playsinline': 1, 
+                'rel': 0,
+                'mute': 1, 
+                'origin': window.location.origin
+            },
+            events: { 'onReady': onPlayerReady }
+        });
+    };
+
+    function onPlayerReady(event) {
+        isPlayerReady = true;
+        event.target.mute(); 
+        if(currentPhase === 'live') event.target.playVideo();
+    }
+
+    /* ================= UI LOGIC ================= */
+    window.dismissOfferFullscreen = function() { offerInWebinar.classList.add('dismissed-fullscreen'); };
+
+    btnFullscreen.addEventListener('click', toggleImmersive);
+    function toggleImmersive() {
+        isImmersive = !isImmersive;
+        if (isImmersive) {
+            document.body.classList.add('is-immersive');
+            btnFullscreen.innerHTML = '<i class="fas fa-compress"></i>';
+            if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+        } else {
+            document.body.classList.remove('is-immersive');
+            btnFullscreen.innerHTML = '<i class="fas fa-expand"></i>';
+            if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+        }
+    }
+    btnToggleChatFloat.addEventListener('click', () => { chatColumn.classList.toggle('chat-hidden'); });
+    
+    let touchStartX = 0;
+    chatColumn.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
+    chatColumn.addEventListener('touchend', e => {
+        if (isImmersive && e.changedTouches[0].screenX < touchStartX - 50) chatColumn.classList.add('chat-hidden');
+    }, {passive: true});
+
+    /* ================= CORE LOOP ================= */
+    function getCycleTimes() {
+        const now = new Date();
+        const start = new Date();
+        start.setHours(CONFIG.webinarHour, CONFIG.webinarMinute, 0, 0);
+        let dayDiff = CONFIG.webinarDay - now.getDay();
+        start.setDate(now.getDate() + dayDiff);
+        
+        const durationMs = CONFIG.videoDurationMin * 60 * 1000;
+        const offerDurationMs = 24 * 60 * 60 * 1000; 
+        const expiredDurationMs = CONFIG.expiredDurationHours * 60 * 60 * 1000;
+
+        let endWebinar = new Date(start.getTime() + durationMs);
+        let endOffer = new Date(endWebinar.getTime() + offerDurationMs);
+        let endExpired = new Date(endOffer.getTime() + expiredDurationMs);
+
+        if (now > endExpired) {
+            start.setDate(start.getDate() + 7);
+            endWebinar = new Date(start.getTime() + durationMs);
+            endOffer = new Date(endWebinar.getTime() + offerDurationMs);
+            endExpired = new Date(endOffer.getTime() + expiredDurationMs);
+        } else if (dayDiff > 0) {
+             const previousStart = new Date(start);
+             previousStart.setDate(start.getDate() - 7);
+             const prevEndExpired = new Date(previousStart.getTime() + durationMs + offerDurationMs + expiredDurationMs);
+             if (now < prevEndExpired) {
+                 return { start: previousStart, endWebinar: new Date(previousStart.getTime() + durationMs), endOffer: new Date(previousStart.getTime() + durationMs + offerDurationMs), endExpired: prevEndExpired };
+             }
+        }
+        return { start, endWebinar, endOffer, endExpired };
+    }
+
+    function switchView(viewName) {
+        Object.values(views).forEach(el => el.classList.add('hidden'));
+        if(views[viewName]) views[viewName].classList.remove('hidden');
+        if (viewName !== 'live') { if(isPlayerReady) player.pauseVideo(); }
+        else { if(isPlayerReady) player.playVideo(); }
+        fetch(`${API_URL}/track-visitor`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: viewName, userAgent: navigator.userAgent }) }).catch(e=>{});
+    }
+
+    function updateTimer(element, targetDate) {
+        const diff = targetDate - new Date();
+        if (diff <= 0) { element.innerText = "00:00:00"; return; }
+        const d = Math.floor(diff/86400000); const h = Math.floor((diff%86400000)/3600000); 
+        const m = Math.floor((diff%3600000)/60000); const s = Math.floor((diff%60000)/1000);
+        element.innerText = d>0 ? `${d}d ${h}h ${m}m ${s}s` : `${h}h ${m}m ${s}s`;
+    }
+
+    function masterLoop() {
+        const now = new Date();
+        const cycle = getCycleTimes();
+        let newState = "";
+        
+        if (now < cycle.start) { newState = "pre"; updateTimer(timers.pre, cycle.start); }
+        else if (now >= cycle.start && now < cycle.endWebinar) { newState = "live"; theoreticalTime = (now - cycle.start) / 1000; }
+        else if (now >= cycle.endWebinar && now < cycle.endOffer) { newState = "offer"; updateTimer(timers.offer, cycle.endOffer); }
+        else { newState = "expired"; }
+
+        if (newState !== currentPhase) {
+            currentPhase = newState;
+            switchView(currentPhase);
+            if (currentPhase === 'live') { isUserSynced = true; startChatPolling(cycle.start.toISOString()); } else stopChatPolling();
+        }
+
+        if (currentPhase === 'live' && isPlayerReady) {
+            if (isUserSynced && !ignoreSync) {
+                let state = player.getPlayerState();
+                if (state === 1 || state === 3) { 
+                    let curr = player.getCurrentTime();
+                    if (Math.abs(curr - theoreticalTime) > 15) player.seekTo(theoreticalTime, true);
+                }
+                updateLiveButton(true);
+            } else updateLiveButton(false);
+            
+            const currentSec = Math.floor(theoreticalTime);
+            fakeChatSchedule.forEach(fakeMsg => {
+                if (currentSec >= fakeMsg.time && !fakeMessagesSent.has(fakeMsg.time)) {
+                    if (currentSec - fakeMsg.time < 5) appendMessage(fakeMsg.name, fakeMsg.text, false, fakeMsg.admin);
+                    fakeMessagesSent.add(fakeMsg.time);
+                }
+            });
+
+            // OFERTA (CONTACTO)
+            const offerTrigger = (CONFIG.offerTimeMin * 60) + CONFIG.offerTimeSec;
+            if (theoreticalTime > offerTrigger) {
+                offerInWebinar.classList.remove('hidden'); 
+            } else {
+                offerInWebinar.classList.add('hidden');
+            }
+        }
+    }
+
+    /* ================= CONTROLES (AUDIO FIX) ================= */
+    function updateLiveButton(isLive) {
+        if (isLive) { btnGoLive.className = "live-indicator is-live"; btnGoLive.innerHTML = '<span class="dot"></span> EN VIVO'; }
+        else { btnGoLive.className = "live-indicator not-live"; btnGoLive.innerHTML = '<span class="dot"></span> VOLVER AL VIVO'; }
+    }
+    
+    btnPlayPause.addEventListener('click', () => { 
+        if(!isPlayerReady) return;
+        if(player.getPlayerState() === 1) { player.pauseVideo(); btnPlayPause.innerHTML='<i class="fas fa-play"></i>'; isUserSynced = false; }
+        else { player.playVideo(); btnPlayPause.innerHTML='<i class="fas fa-pause"></i>'; }
+    });
+    
+    btnVolume.addEventListener('click', () => {
+        if(!isPlayerReady) return;
+        ignoreSync = true;
+        setTimeout(() => { ignoreSync = false; }, 10000); 
+        player.setVolume(100).catch(()=>{});
+        if (isMuted) {
+            player.unMute().then(() => { player.getPlayerState() === 2 && player.playVideo(); }).catch(()=>{});
+            btnVolume.innerHTML='<i class="fas fa-volume-up"></i>';
+            isMuted = false;
+        } else {
+            player.mute().catch(()=>{});
+            btnVolume.innerHTML='<i class="fas fa-volume-mute"></i>';
+            isMuted = true;
+        }
+    });
+
+    btnGoLive.addEventListener('click', () => { 
+        if (!isUserSynced && isPlayerReady) { 
+            player.seekTo(theoreticalTime, true); player.playVideo(); isUserSynced = true; btnPlayPause.innerHTML='<i class="fas fa-pause"></i>'; 
+        } 
+    });
+
+    /* ================= CHAT INDEPENDIENTE (/chat-fran) ================= */
+    const chatMessagesDiv = document.getElementById('chat-messages');
+    const nameInput = document.getElementById('chat-name');
+    const msgInput = document.getElementById('chat-msg');
+    const btnSend = document.getElementById('btn-send-chat');
+
+    function appendMessage(name, text, isMe = false, isAdmin = false) {
+        const div = document.createElement('div');
+        div.className = `chat-msg ${isMe ? 'me' : ''} ${isAdmin ? 'admin' : ''}`;
+        div.innerHTML = `<span class="chat-name">${name}:</span><span class="chat-text">${text}</span>`;
+        chatMessagesDiv.appendChild(div); chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+    }
+    
+    function startChatPolling(startTimeISO) {
+        webinarStartTimeISO = startTimeISO; chatMessagesDiv.innerHTML = ''; fakeMessagesSent.clear(); seenMessageIds.clear();
+        appendMessage('Moderador', '¡Inicia sesión de preguntas! 👇', false, true);
+        fetchMessages(); 
+        if (chatInterval) clearInterval(chatInterval); 
+        chatInterval = setInterval(fetchMessages, 2500);
+    }
+    function stopChatPolling() { if (chatInterval) clearInterval(chatInterval); }
+    
+    async function fetchMessages() {
+        if (!webinarStartTimeISO) return;
+        try {
+            // endpoint ESPECIFICO
+            const response = await fetch(`${API_URL}/chat-fran?since=${webinarStartTimeISO}`);
+            const messages = await response.json();
+            messages.forEach(msg => {
+                if (!seenMessageIds.has(msg._id)) {
+                    appendMessage(msg.name, msg.text, msg.name === (nameInput.value.trim() || "Anónimo"));
+                    seenMessageIds.add(msg._id);
+                }
+            });
+        } catch (e) {}
+    }
+    
+    async function sendMessage() {
+        const text = msgInput.value.trim(); if (!text) return;
+        const name = nameInput.value.trim() || "Anónimo";
+        msgInput.value = "";
+        try { 
+            // endpoint ESPECIFICO
+            await fetch(`${API_URL}/chat-fran`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, text }) }); 
+            fetchMessages(); 
+        } catch (e) {}
+    }
+    btnSend.addEventListener('click', sendMessage);
+    msgInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+
+    setInterval(masterLoop, 1000); masterLoop();
+</script>
+</body>
+</html>
